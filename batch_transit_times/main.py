@@ -68,7 +68,7 @@ class PandasWrapper:
                     dest_country=d_country)
                 transit_times.append(transit_time_types[tt])
 
-            partition['transit_times'] = transit_times
+            partition['transit_time'] = transit_times
             filename = 'partition_%s.csv' % partition_number
             filepath = os.path.join(self.storage_dir, filename)
             logging.info('Saving %s to %s' % (partition.shape, filepath))
