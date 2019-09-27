@@ -1,6 +1,7 @@
 from fedex.services.availability_commitment_service import \
     FedexAvailabilityCommitmentRequest
 from fedex.tools.conversion import sobject_to_dict
+from .transit_time_types import transit_time_types
 import pandas as pd
 import numpy as np
 import logging
@@ -65,7 +66,7 @@ class PandasWrapper:
                     origin_country=o_country,
                     dest_zip=d_zip,
                     dest_country=d_country)
-                transit_times.append(tt)
+                transit_times.append(transit_time_types[tt])
 
             partition['transit_times'] = transit_times
             filename = 'partition_%s.csv' % partition_number
