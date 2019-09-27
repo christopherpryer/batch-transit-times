@@ -9,7 +9,7 @@ import pandas as pd
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 def test_init():
-    helper = PandasWrapper(CONFIG_OBJ)
+    helper = PandasWrapper(CONFIG_OBJ, partition_size=0, storage_dir=None)
     assert helper
 
 def test_batch():
@@ -21,7 +21,9 @@ def test_batch():
     df.origin_zip = df.origin_zip.astype('str').str.zfill(5)
     df.dest_zip = df.dest_zip.astype('str').str.zfill(5)
 
-    helper = PandasWrapper(CONFIG_OBJ)
+    storage_dir = os.path.join(root_dir, 'instance')
+    helper = PandasWrapper(CONFIG_OBJ, partition_size=2,
+        storage_dir=storage_dir)
     helper.df = df.copy()
     assert not helper.df.empty
 

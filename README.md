@@ -27,7 +27,11 @@ df = pd.read_csv(os.path.join(root_dir, 'filename.csv'))
 df.origin_zip = df.origin_zip.astype('str').str.zfill(5)
 df.dest_zip = df.dest_zip.astype('str').str.zfill(5)
 
-helper = PandasWrapper(CONFIG_OBJ)
+# path to directory to store response partitions
+storage_dir = os.path.join(root_dir, 'instance')
+
+helper = PandasWrapper(CONFIG_OBJ, partition_size=2,
+    storage_dir=storage_dir)
 helper.df = df.copy()
 
 helper.run()

@@ -4,15 +4,19 @@ from fedex.tools.conversion import sobject_to_dict
 import pandas as pd
 import numpy as np
 import logging
+import traceback
+import os
 import sys
 
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 class PandasWrapper:
-    def __init__(self, config):
+    def __init__(self, config, partition_size, storage_dir):
         self.df = pd.DataFrame()
         self.config = config
+        self.partition_size = partition_size
+        self.storage_dir = storage_dir
 
     def get_transit_time(self, origin_zip, origin_country, dest_zip,
         dest_country):
@@ -44,18 +48,41 @@ class PandasWrapper:
                 logging.warning('No Fedex Ground Service found.')
                 return np.nan
 
-    def run(self):
+    def manage_partitioning(self, partition_number):
         if not self.df.empty:
+            start = self.start_i
+            end = start + self.partition_size
+            partition = self.df[start:end].copy()
+
             transit_times = []
-            for i in range(len(self.df)):
-                o_zip = self.df.origin_zip.iloc[i]
-                o_country = self.df.origin_country.iloc[i]
-                d_zip = self.df.dest_zip.iloc[i]
-                d_country = self.df.dest_country.iloc[i]
+            for i in range(len(partition)):
+                o_zip = partition.origin_zip.iloc[i]
+                o_country = partition.origin_country.iloc[i]
+                d_zip = partition.dest_zip.iloc[i]
+                d_country = partition.dest_country.iloc[i]
                 tt = self.get_transit_time(
                     origin_zip=o_zip,
                     origin_country=o_country,
                     dest_zip=d_zip,
                     dest_country=d_country)
                 transit_times.append(tt)
+
+            partition['transit_times'] = transit_times
+            filename = 'partition_%s.csv' % partition_number
+            filepath = os.path.join(self.storage_dir, filename)
+            logging.info('Saving %s to %s' % (partition.shape, filepath))
+            partition.to_csv(filepath, index=False)
+            self.start_i += self.partition_size
+            return transit_times
+
+    def run(self):
+        self.start_i = 0
+        n_partitions = int(np.ceil(len(self.df)/self.partition_size))
+        transit_times = []
+        try:
+            for i in range(n_partitions):
+                transit_times += self.manage_partitioning(i)
             self.df['transit_time'] = transit_times
+        except Exception as e:
+            logging.error('Partition failed. Error: %s' % e)
+            traceback.print_exc() # for initial dev TODO: create debug mode
