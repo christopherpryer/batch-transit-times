@@ -1,12 +1,12 @@
-# batch-transit-times
+# python-transit-times
 Python package that leverages python-fedex to process ground transit times for shipment data.
 
 ### Instructions
-Getting Fedex Ground transit times using PandasWrapper helper:
+Getting Fedex Ground transit times using FedexHelper helper:
 
 
 ```python
-from batch_transit_times import PandasWrapper
+from batch_transit_times import FedexHelper
 from fedex.config import FedexConfig
 
 
@@ -30,7 +30,7 @@ df.dest_zip = df.dest_zip.astype('str').str.zfill(5)
 # path to directory to store response partitions
 storage_dir = os.path.join(root_dir, 'instance')
 
-helper = PandasWrapper(CONFIG_OBJ, partition_size=2,
+helper = FedexHelper(CONFIG_OBJ, partition_size=2,
     storage_dir=storage_dir)
 helper.df = df.copy()
 

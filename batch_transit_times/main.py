@@ -12,7 +12,7 @@ import sys
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
-class PandasWrapper:
+class FedexHelper:
     def __init__(self, config, partition_size, storage_dir):
         self.df = pd.DataFrame()
         self.config = config

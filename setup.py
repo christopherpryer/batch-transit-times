@@ -1,11 +1,11 @@
-from dat import __version__
+from batch_transit_times import __version__
 from setuptools import setup
 
 long_description = ''
 with open('./README.md') as f:
     long_description = f.read()
 
-setup(name='dat',
+setup(name='batch_transit_times',
     version=__version__,
     description='Python package that leverages python-fedex to process ground transit times for shipment data.',
     long_description=long_description,
