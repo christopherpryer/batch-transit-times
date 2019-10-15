@@ -28,26 +28,31 @@ class FedexHelper:
         self.request.Destination.CountryCode = dest_country
         self.request.Service = 'FEDEX_GROUND'
 
-        self.request.send_request()
-        response_dict = sobject_to_dict(self.request.response)
+        try:
+            self.request.send_request()
+            response_dict = sobject_to_dict(self.request.response)
+            # output display formatting
+            origin_str = '%s, %s' % (
+                self.request.Origin.PostalCode,
+                self.request.Origin.CountryCode)
+            destination_str = '%s, %s' % (
+                self.request.Destination.PostalCode,
+                self.request.Destination.CountryCode)
 
-        # output display formatting
-        origin_str = '%s, %s' % (
-            self.request.Origin.PostalCode,
-            self.request.Origin.CountryCode)
-        destination_str = '%s, %s' % (
-            self.request.Destination.PostalCode,
-            self.request.Destination.CountryCode)
+            logging.info('origin: %s' % origin_str)
+            logging.info('destination: %s' % destination_str)
+            for option in response_dict['Options']:
+                if option['Service'] == 'FEDEX_GROUND':
+                    logging.info('TransitTime: %s' % option['TransitTime'])
+                    return option['TransitTime'] # TODO: convert from type to int
+                else:
+                    logging.warning('No Fedex Ground Service found.')
+                    return np.nan
+        except Exception as e:
+            logging.warning('Fedex request failed. Error: %s' % e)
+            return np.nan
+            #traceback.print_exc() # for initial dev TODO: create debug mode
 
-        logging.info('origin: %s' % origin_str)
-        logging.info('destination: %s' % destination_str)
-        for option in response_dict['Options']:
-            if option['Service'] == 'FEDEX_GROUND':
-                logging.info('TransitTime: %s' % option['TransitTime'])
-                return option['TransitTime'] # TODO: convert from type to int
-            else:
-                logging.warning('No Fedex Ground Service found.')
-                return np.nan
 
     def manage_partitioning(self, partition_number):
         if not self.df.empty:
@@ -66,7 +71,11 @@ class FedexHelper:
                     origin_country=o_country,
                     dest_zip=d_zip,
                     dest_country=d_country)
-                transit_times.append(transit_time_types[tt])
+
+                if pd.isnull(tt):
+                    transit_times.append(tt)
+                else:
+                    transit_times.append(transit_time_types[tt])
 
             partition['transit_time'] = transit_times
             filename = 'partition_%s.csv' % partition_number
@@ -80,10 +89,6 @@ class FedexHelper:
         self.start_i = 0
         n_partitions = int(np.ceil(len(self.df)/self.partition_size))
         transit_times = []
-        try:
-            for i in range(n_partitions):
-                transit_times += self.manage_partitioning(i)
-            self.df['transit_time'] = transit_times
-        except Exception as e:
-            logging.error('Partition failed. Error: %s' % e)
-            traceback.print_exc() # for initial dev TODO: create debug mode
+        for i in range(n_partitions):
+            transit_times += self.manage_partitioning(i)
+        self.df['transit_time'] = transit_times
